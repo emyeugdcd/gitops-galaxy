@@ -1,0 +1,53 @@
+# Default values for vitals-app.
+# This is a YAML-formatted file.
+
+namespace: vitals-app
+
+backend:
+  replicaCount: 1
+  image:
+    repository: vitals-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  service:
+    port: 8080
+  # Raw port for container
+  containerPort: 8080
+
+frontend:
+  replicaCount: 2
+  image:
+    repository: vitals-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 300m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 64Mi
+  service:
+    port: 3000
+  # Raw port for container
+  containerPort: 3000
+  config:
+    backendUrl: "http://vitals-backend-service:8080"
+
+ingress:
+  enabled: true
+  host: vitals.local
+  sslRedirect: "false"
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUPercentage: 50

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Infrastructure Insight</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Infrastructure Insight</h1>
+      <span id="web-server-badge" class="badge">Web server: —</span>
+    </header>
+
+    <main>
+      <div id="status-bar">
+        <span id="last-updated">Fetching metrics...</span>
+        <button id="refresh-btn">Refresh</button>
+      </div>
+
+      <div id="metrics-grid">
+        <div class="card" id="card-host">
+          <div class="card-title">Hostname (Patient ID)</div>
+          <div class="card-value" id="val-hostname">—</div>
+        </div>
+        <div class="card" id="card-os">
+          <div class="card-title">OS Build (Vitals Profile)</div>
+          <div class="card-value" id="val-os">—</div>
+        </div>
+        <div class="card" id="card-uptime">
+          <div class="card-title">Uptime (Shift Duration)</div>
+          <div class="card-value" id="val-uptime">—</div>
+        </div>
+        <div class="card" id="card-go">
+          <div class="card-title">Go version</div>
+          <div class="card-value" id="val-go">—</div>
+        </div>
+
+        <div class="card wide heartbeat-card" id="card-cpu">
+          <div class="card-title">CPU Load ❤️ (Heart Rate)</div>
+          <div class="card-value pulse-text" id="val-cpu-model">—</div>
+          <div class="card-sub" id="val-cpu-cores">— cores</div>
+          <div class="progress-label">
+            <span>Usage</span>
+            <span id="val-cpu-pct">—%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill cpu-fill" id="bar-cpu"></div>
+          </div>
+        </div>
+
+        <div class="card wide" id="card-mem">
+          <div class="card-title">Memory 💧 (SpO2 Saturation)</div>
+          <div class="card-value" id="val-mem-used">—</div>
+          <div class="card-sub" id="val-mem-total">of — MB</div>
+          <div class="progress-label">
+            <span>Usage</span>
+            <span id="val-mem-pct">—%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill mem-fill fluid-wave" id="bar-mem"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="timestamp">Last updated: <span id="val-timestamp">—</span></div>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

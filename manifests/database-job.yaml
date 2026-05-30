@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-connection-check
+  namespace: vitals-app
+spec:
+  template:
+    spec:
+      containers:
+      - name: db-check
+        image: registry-1.docker.io/bitnami/postgresql:latest
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vitals-db-postgresql
+              key: password
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        command:
+        - /bin/bash
+        - -c
+        - |
+          echo "Connecting to PostgreSQL database..."
+          # Try to connect in a loop up to 10 times (waiting for server to be fully ready)
+          for i in {1..10}; do
+            if psql -h vitals-db-postgresql -U vitals_user -d vitals -p 5432 -c "select 1;" >/dev/null 2>&1; then
+              echo "Connected successfully!"
+              break
+            fi
+            echo "Database not ready yet, retrying in 5 seconds... (attempt $i/10)"
+            sleep 5
+          done
+
+          psql -h vitals-db-postgresql -U vitals_user -d vitals -p 5432 -c "CREATE TABLE IF NOT EXISTS test_connection (id SERIAL PRIMARY KEY, test_val VARCHAR(50));"
+          psql -h vitals-db-postgresql -U vitals_user -d vitals -p 5432 -c "INSERT INTO test_connection (test_val) VALUES ('Success');"
+          RESULT=$(psql -h vitals-db-postgresql -U vitals_user -d vitals -p 5432 -t -A -c "SELECT test_val FROM test_connection LIMIT 1;")
+          if [ "$RESULT" = "Success" ]; then
+            echo "PostgreSQL Connection Successful! Read/Write test passed."
+            exit 0
+          else
+            echo "Failed to verify data write."
+            exit 1
+          fi
+      restartPolicy: Never
+  backoffLimit: 2

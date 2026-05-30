@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: git-server
+  namespace: vitals-app
+  labels:
+    app: git-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: git-server
+  template:
+    metadata:
+      labels:
+        app: git-server
+    spec:
+      containers:
+      - name: git-server
+        image: alpine:latest
+        command:
+        - sh
+        - -c
+        - |
+          apk add --no-cache git git-daemon
+          mkdir -p /git/gitops-galaxy.git
+          git init --bare --shared /git/gitops-galaxy.git
+          git config -f /git/gitops-galaxy.git/config daemon.receivepack true
+          echo "Git server initialized. Starting daemon..."
+          git daemon --verbose --export-all --base-path=/git --port=9418 --enable=receive-pack
+        ports:
+        - containerPort: 9418
+          name: git
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: git-server
+  namespace: vitals-app
+spec:
+  selector:
+    app: git-server
+  ports:
+  - name: git
+    protocol: TCP
+    port: 9418
+    targetPort: 9418
