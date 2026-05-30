@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vitals-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'git://git-server.vitals-app.svc.cluster.local:9418/gitops-galaxy.git'
+    targetRevision: main
+    path: charts/vitals-app
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: vitals-app
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
