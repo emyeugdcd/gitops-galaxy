@@ -11,6 +11,13 @@ minikube start --driver=docker --cpus=4 --memory=6144
 minikube addons enable ingress
 minikube addons enable metrics-server
 
+# 1.5. Build and Load Docker Images
+echo "Step 1.5: Building and loading backend & frontend Docker images..."
+docker build -t vitals-backend:latest ./backend
+docker build -t vitals-frontend:latest ./frontend
+minikube image load vitals-backend:latest
+minikube image load vitals-frontend:latest
+
 # 2. Set Namespace Resource Quotas
 echo "Step 2: Applying namespace limit ranges..."
 kubectl create namespace vitals-app --dry-run=client -o yaml | kubectl apply -f -

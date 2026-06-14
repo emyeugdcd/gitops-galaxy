@@ -1,6 +1,6 @@
 # GitOps Galaxy: Testing & Requirements Validation
 
-To help you with testing and reviewing this project, I have prepared answers to the testing requirements (provided by kood/sisu), including file references and testing commands
+To help you with testing and reviewing this project, I have prepared answers to the testing requirements (provided by kood/sisu), including file references and testing commands. This how-to-test.md works best combined with study-guide.md, where I explained in details with examples every concept and technology used in this project, as a way to teach myself also.
 
 ---
 
@@ -57,7 +57,7 @@ To help you with testing and reviewing this project, I have prepared answers to 
   *Expected Output*: Pod `vitals-db-postgresql-0` shows `Running` (1/1), Service `vitals-db-postgresql` exists, and PVC `data-vitals-db-postgresql-0` shows status `Bound`.
 
 ### 8. Database Job for Connectivity Checking
-* **Reference**: Defined in [database-job.yaml](file:///Users/williamle/my_cloud_project/kood-sisu/gitops-galaxy/manifests/database-job.yaml).
+* **Reference**: Defined in [database-job.yaml]. This testing requirement is actually done during the setting up of the project, as detailed in [README.md]
 * **Verification Command**:
   ```bash
   # Apply the job
@@ -102,7 +102,7 @@ To help you with testing and reviewing this project, I have prepared answers to 
 ## Part 3: Custom Helm Chart Configuration (Requirements 10-16)
 
 ### 10. Custom Helm Chart Components
-* **Reference**: Located in the [vitals-app](file:///Users/williamle/my_cloud_project/kood-sisu/gitops-galaxy/charts/vitals-app) folder.
+* **Reference**: Located in the [vitals-app] folder.
 * **Structure Verification**:
   ```bash
   helm lint charts/vitals-app/
@@ -117,7 +117,7 @@ To help you with testing and reviewing this project, I have prepared answers to 
   Which translates to `vitals-backend:latest` using the default variables in `values.yaml`.
 
 ### 12. Customization via values.yaml File
-* **Reference**: Declared in [values.yaml](file:///Users/williamle/my_cloud_project/kood-sisu/gitops-galaxy/charts/vitals-app/values.yaml).
+* **Reference**: Declared in [values.yaml].
 * **Testing Command**: Run a template compilation locally to confirm configuration changes:
   ```bash
   # Test with a modified image tag or memory limits passed dynamically
@@ -172,7 +172,11 @@ To help you with testing and reviewing this project, I have prepared answers to 
   # Expose the dashboard interface
   kubectl port-forward service/argocd-server -n argocd 8080:443
   ```
-  Open `https://localhost:8080` and log in as `admin`.
+  Open `https://localhost:8080` and log in as `admin`. Run this command to get the password:
+  ```bash
+  kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+  ```
+  
 
 ### 18. ArgoCD Control Plane Architecture
 * **Answer**:
@@ -182,7 +186,7 @@ To help you with testing and reviewing this project, I have prepared answers to 
   * **Redis Cache**: Caches manifest rendering and cluster query data to reduce load on the API.
 
 ### 19. Git Repository Integration
-* **Reference**: Configured in [argocd-app.yaml](file:///Users/williamle/my_cloud_project/kood-sisu/gitops-galaxy/manifests/argocd-app.yaml).
+* **Reference**: Configured in [argocd-app.yaml].
 * **Verification**: In the ArgoCD UI under Settings -> Repositories, or CLI:
   ```bash
   kubectl get app vitals-app -n argocd -o yaml
@@ -282,7 +286,7 @@ To help you with testing and reviewing this project, I have prepared answers to 
 ## Part 6: Best Practices & Code Quality (Requirements 32-35)
 
 ### 32. Project Documentation Completeness
-* **Reference**: Includes the [README.md](file:///Users/williamle/my_cloud_project/kood-sisu/gitops-galaxy/README.md), the incident response runbook, and the [Study Guide](file:///Users/williamle/my_cloud_project/kood-sisu/gitops-galaxy/study-guide.md).
+* **Reference**: Includes the [README.md], the incident response runbook, and the [Study Guide]
 
 ### 33. Directory Structure Standards
 * **Reference**: Clear separation:
@@ -330,5 +334,5 @@ To help you with testing and reviewing this project, I have prepared answers to 
 ### 40. Additional GitOps Features & Enhancements
 * **Answer**:
   1. **In-Cluster Git Server Daemon**: Simplifies offline deployment by hosting a bare-metal Git daemon directly on Minikube's network.
-  2. **Namespace Limits Config Map**: Restricts namespace resource quotas using [namespace-limits.yaml](file:///Users/williamle/my_cloud_project/kood-sisu/gitops-galaxy/manifests/namespace-limits.yaml).
+  2. **Namespace Limits Config Map**: Restricts namespace resource quotas using [namespace-limits.yaml].
   3. **ArgoCD Self-Healing Configuration**: Automates drift reconciliation to instantly revert unauthorized cluster changes.

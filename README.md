@@ -179,7 +179,7 @@ kubectl get deployment vitals-frontend -n vitals-app
 
 ## 4. Study Guide & Core Concepts
 
-To prepare for the review, in the /docs directory, I have prepared a study-guide.md file that serves as a comprehensive guide for understanding the core concepts of Helm and GitOps.
+To prepare for the review, in the /docs directory, I have prepared a study-guide.md file that serves as a comprehensive guide for understanding the core concepts of Helm and GitOps. This study-guide.md can be used together with the how-to-test.md to learn more about the concepts and technology used in this project. 
 
 Key areas covered in the study-guide.md:
 - **Helm Mechanics**: Packaging structures, Go templates syntax, dependency management, dry-run template compilation, and lifecycle hooks.
@@ -189,4 +189,4 @@ Key areas covered in the study-guide.md:
 
 ## 5. Complete Testing Rubric
 
-To make the review process easier, I have fully documented answers, commands, and verification guidelines for all 40 requirements in [how-to-test.md]. Use this document as your primary reference guide to demonstrate compliance during the review interview.
+To make the review process easier, I have fully documented answers, commands, and verification guidelines for all 40 requirements in [how-to-test.md]. 
