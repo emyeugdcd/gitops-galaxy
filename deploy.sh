@@ -39,15 +39,13 @@ kubectl apply -f manifests/git-server.yaml
 echo "Waiting for Git server deployment to complete..."
 kubectl rollout status deployment/git-server -n vitals-app --timeout=120s
 
-echo "Initializing HEAD symbolic reference in git server..."
-# Wait for git to be installed and available in the container
-for i in {1..30}; do
-  if kubectl exec -n vitals-app deployment/git-server -c git-server -- which git >/dev/null 2>&1; then
-    break
-  fi
-  echo "Waiting for Git binary to be installed in git-server pod... (attempt $i/30)"
-  sleep 2
+echo "Waiting for git executable to be ready in the git-server container..."
+until kubectl exec -n vitals-app deployment/git-server -c git-server -- which git >/dev/null 2>&1; do
+  echo "Git is not installed yet inside the container. Waiting 3 seconds..."
+  sleep 3
 done
+
+echo "Initializing HEAD symbolic reference in git server..."
 kubectl exec -n vitals-app deployment/git-server -c git-server -- git --git-dir=/git/gitops-galaxy.git symbolic-ref HEAD refs/heads/main
 
 # 5. Push local configs to the Git Server
