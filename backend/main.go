@@ -101,7 +101,7 @@ func getCPUModel() string {
 
 // Measures CPU usage by sampling /proc/stat twice with a short sleep between.
 // /proc/stat gives cumulative CPU ticks — the difference between two reads
-// tells you how busy the CPU was in that window.
+// tells us how busy the CPU was in that window.
 func getCPUUsage() float64 {
 	read := func() (idle, total uint64) {
 		data, err := os.ReadFile("/proc/stat")
@@ -223,13 +223,13 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	
+
 	go updatePrometheusMetrics()
 
 	http.HandleFunc("/metrics", metricsHandler)
 	http.Handle("/prometheus", promhttp.Handler())
 	http.HandleFunc("/health", healthHandler)
-	
+
 	logrus.WithFields(logrus.Fields{
 		"port": port,
 	}).Info("Backend running")

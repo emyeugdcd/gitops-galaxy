@@ -18,4 +18,14 @@ spec:
             name: vitals-frontend-service
             port:
               number: {{ .Values.frontend.service.port }}
+  - host: vitals-backend-service
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: vitals-backend-service
+            port:
+              number: {{ .Values.backend.service.port }}
 {{- end }}

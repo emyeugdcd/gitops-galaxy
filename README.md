@@ -1,29 +1,55 @@
 # GitOps Galaxy: Declarative Continuous Delivery with Helm & ArgoCD
 
-This project demonstrates the transition of a microservices application (Go Backend + NodeJS Frontend) from static Kubernetes manifests (`cluster-chronicles`) to a dynamic, automated **GitOps Workflow** using **Helm** for packaging and **ArgoCD** for continuous reconciliation.
+Welcome to GitOps Galaxy, the 6th project of the DevOps study module provided by kood/sisu. This project demonstrates the transition of a microservices application (Go Backend + NodeJS Frontend) from static Kubernetes manifests (`cluster-chronicles`) to a dynamic, automated **GitOps Workflow** using **Helm** for packaging and **ArgoCD** for continuous reconciliation/delivery.
 
 It also configures an in-cluster **PostgreSQL Database** via Helm with persistent storage and resource quotas, verified through an automated Kubernetes Job.
 
 ---
 
-## 🛠️ 1. Infrastructure Overview
+## 1. Infrastructure Overview
 
-```mermaid
-graph TD
-  HostMac["Host Mac"] -- git push (port 9418) --> GitServerService["git-server Service (Port 9418)"]
-  GitServerService --> GitServerPod["git-server Pod (Git Daemon)"]
-  ArgoCD["ArgoCD Controller"] -- poll/pull repository --> GitServerPod
-  ArgoCD -- reconcile state --> VitalsApp["vitals-app Namespace"]
-  VitalsApp --> BackendPod["vitals-backend Pod"]
-  VitalsApp --> FrontendPods["vitals-frontend Pods"]
-  VitalsApp --> PostgreSQL["vitals-db-postgresql Pod (Helm)"]
+```text
+ ┌────────────────┐
+ │  Local Machine │  (developer commits changes to Values.yaml)
+ └───────┬────────┘
+         │ (git push)
+         ▼
+ ┌────────────────┐
+ │    Git Repo    │◀──────────────────────────────────────────┐
+ │ (Git Server)   │                                           │
+ └───────┬────────┘                                           │
+         │                                                    │
+         │ (Watches Git for new commits)                      │
+         ▼                                                    │
+ ┌────────────────┐                                           │
+ │    ArgoCD      │ (Detects out-of-sync / drift)             │
+ └───────┬────────┘                                           │
+         │                                                    │
+         │ (Automatically applies / reconciles state)         │
+         ▼                                                    │
+ ┌────────────────────────────────────────────────────────┐   │
+ │                   Kubernetes Cluster                   │   │
+ │                                                        │   │
+ │  [ vitals-app Namespace ]                              │   │
+ │   ├── PostgreSQL (Helm install vitals-db)              │   │
+ │   ├── Backend Pod (vitals-backend)                     │   │
+ │   └── Frontend Pods (vitals-frontend) ───[ Manually ]──┼───┘
+ │                                          [ scaled?  ]  |
+ └────────────────────────────────────────────────────────┘
 ```
 
-To run this project fully offline locally without external repository credentials, we deploy a lightweight, bare-metal **Git Server Daemon** (`git-server`) inside the cluster. It serves as our remote repository host.
+To run this project fully offline locally without external repository credentials, I have deployed a lightweight, bare-metal **Git Server Daemon** (`git-server`) inside the cluster. It serves as the remote repository host.
 
 ---
 
-## 🚀 2. Cluster Setup & Installation
+## 2. Cluster Setup & Installation
+
+There are two ways to run the setup of this project. You can either run the command to get everything up and running
+```bash
+./deploy.sh
+```
+
+Or if you are interested in learning how things work under the hood, feel free to follow the steps below:
 
 ### Step 1: Start Minikube & Enable Addons
 ```bash
@@ -111,7 +137,7 @@ kubectl apply -f manifests/argocd-app.yaml
 
 ---
 
-## 🔬 3. Validation & Testing Runbook
+## 3. Validation & Testing Runbook
 
 ### Test 1: Verify PostgreSQL Connectivity (Batch Job)
 Apply the batch Job which writes and reads from PostgreSQL:
@@ -148,3 +174,19 @@ Within seconds, execute:
 kubectl get deployment vitals-frontend -n vitals-app
 ```
 **Expected Outcome**: ArgoCD detects the discrepancy against Git (which declares 2 replicas). It flags the state as `OutOfSync` and instantly reconciles the cluster, scaling it back down to `2/2` replicas automatically.
+
+---
+
+## 4. Study Guide & Core Concepts
+
+To prepare for the review, in the /docs directory, I have prepared a study-guide.md file that serves as a comprehensive guide for understanding the core concepts of Helm and GitOps.
+
+Key areas covered in the study-guide.md:
+- **Helm Mechanics**: Packaging structures, Go templates syntax, dependency management, dry-run template compilation, and lifecycle hooks.
+- **Declarative GitOps**: Principles of pulling continuous delivery, push vs. pull architecture, credentials isolation, self-healing options (Prune, Self-Heal), and ArgoCD Image Updater automation. I also added an overview of how to manage multiple git remotes to jog your memory on the subject.
+- **Architectural Comparison**: Detailed comparison mapping differences between the imperative setup of [Cluster Chronicles] and the declarative GitOps engine of [GitOps Galaxy].
+---
+
+## 5. Complete Testing Rubric
+
+To make the review process easier, I have fully documented answers, commands, and verification guidelines for all 40 requirements in [how-to-test.md]. Use this document as your primary reference guide to demonstrate compliance during the review interview.

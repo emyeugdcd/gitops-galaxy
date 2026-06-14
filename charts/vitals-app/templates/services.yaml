@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: vitals-backend-service
   namespace: {{ .Values.namespace }}
+  labels:
+    app: vitals-backend
 spec:
   selector:
     app: vitals-backend
@@ -17,6 +19,8 @@ kind: Service
 metadata:
   name: vitals-frontend-service
   namespace: {{ .Values.namespace }}
+  labels:
+    app: vitals-frontend
 spec:
   selector:
     app: vitals-frontend

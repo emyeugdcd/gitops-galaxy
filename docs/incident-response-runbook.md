@@ -1,10 +1,10 @@
 # Production Incident Response Runbook: A Senior DevOps Guide
 
-When a production system breaks, panic is your worst enemy. Senior SRE/DevOps engineers follow a structured **5-Stage Incident Response Framework** to resolve outages safely, methodically, and quickly.
+When a production system breaks, panic is your worst enemy. What should you do professionally and quickly? Senior SRE/DevOps engineers follow a structured **5-Stage Incident Response Framework** to resolve outages safely, methodically, and quickly.
 
 ---
 
-## 🗺️ The 5-Stage Triage Framework
+## The 5-Stage Triage Framework
 
 ```mermaid
 flowchart TD
@@ -16,7 +16,7 @@ flowchart TD
 
 ---
 
-## 🚨 Stage 1: Triage & Impact Assessment
+## Stage 1: Triage & Impact Assessment
 *Goal: Understand the scope of the outage. Is the system completely down or just degraded? Who is affected?*
 
 1. **Verify External Access**: Check the ingress endpoint from your local host or browser:
@@ -36,7 +36,7 @@ flowchart TD
 
 ---
 
-## 🩺 Stage 2: Isolation & Mitigation (Stop the Bleeding)
+## Stage 2: Isolation & Mitigation (Stop the Bleeding)
 *Goal: Bring the service back online immediately. Mitigate first, investigate later. **Never spend 3 hours diagnosing a bug while users see 500 errors.***
 
 1. **Perform a GitOps Rollback (The Fastest Fix)**:
@@ -61,7 +61,7 @@ flowchart TD
 
 ---
 
-## 🔍 Stage 3: Deep Investigation (Find Root Cause)
+## Stage 3: Deep Investigation (Find Root Cause)
 *Goal: Diagnose why the failure occurred using cluster diagnostics.*
 
 1. **Inspect Event Stream (Chronological Audit)**:
@@ -102,7 +102,7 @@ flowchart TD
 
 ---
 
-## 🛠️ Stage 4: Resolution via GitOps Reconcile
+## Stage 4: Resolution via GitOps Reconcile
 *Goal: Permanently fix the bug. **Never run direct `kubectl edit` commands in production.** Always resolve issues by committing to Git.*
 
 1. **Modify Configuration**:
@@ -121,7 +121,7 @@ flowchart TD
 
 ---
 
-## 📝 Stage 5: Post-Mortem & Preventative Actions
+## Stage 5: Post-Mortem & Preventative Actions
 *Goal: Ensure the failure never happens again.*
 
 1. **Conduct a Blameless Post-Mortem**: Document the timeline:

@@ -1,11 +1,11 @@
 # Master Walkthrough & Timeline Diary: GitOps Galaxy
 
-This document records the exact step-by-step execution timeline, commands, wait times, and troubleshooting resolution during our Helm and ArgoCD GitOps deployment.
+This document records the exact step-by-step execution timeline, commands, wait times, and troubleshooting resolution during the deployment of this project.
 
 ---
 
-## 🏗️ Step 1: Quotas and Space Provisioning
-* **What we did**: Configured resource constraints on our application namespace to restrict CPU/Memory allocations.
+## Step 1: Quotas and Space Provisioning
+* **What I did**: Configured resource constraints on our application namespace to restrict CPU/Memory allocations.
 * **Commands run**:
   ```bash
   kubectl apply -f manifests/namespace-limits.yaml
@@ -15,8 +15,8 @@ This document records the exact step-by-step execution timeline, commands, wait 
 
 ---
 
-## 💾 Step 2: Deploying PostgreSQL via Helm
-* **What we did**: Added the Bitnami repository, synced it, and installed PostgreSQL with persistent disk allocation and memory limits capped to conserve Mac RAM.
+## Step 2: Deploying PostgreSQL via Helm
+* **What I did**: Added the Bitnami repository, synced it, and installed PostgreSQL with persistent disk allocation and memory limits capped to conserve Mac RAM.
 * **Commands run**:
   ```bash
   helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -40,8 +40,8 @@ This document records the exact step-by-step execution timeline, commands, wait 
 
 ---
 
-## 📡 Step 3: Local Cluster Git Server Setup
-* **What we did**: Deployed a lightweight Alpine pod running a bare `git daemon` to act as our local version control origin inside the cluster network.
+## Step 3: Local Cluster Git Server Setup
+* **What I did**: Deployed a lightweight Alpine pod running a bare `git daemon` to act as my local version control origin inside the cluster network.
 * **Commands run**:
   ```bash
   kubectl apply -f manifests/git-server.yaml
@@ -54,8 +54,8 @@ This document records the exact step-by-step execution timeline, commands, wait 
 
 ---
 
-## 🔄 Step 4: Port Forwarding & Git Push
-* **What we did**: Exposed git daemon port `9418` to our host machine via background port-forwarding, initialized our git repository locally, and pushed our Helm charts to the cluster.
+## Step 4: Port Forwarding & Git Push
+* **What I did**: Exposed git daemon port `9418` to my host machine via background port-forwarding, initialized my git repository locally, and pushed my Helm charts to the cluster.
 * **Commands run**:
   ```bash
   # Background port-forward
@@ -75,8 +75,8 @@ This document records the exact step-by-step execution timeline, commands, wait 
 
 ---
 
-## 🐙 Step 5: Installing ArgoCD via Helm
-* **What we did**: Installed ArgoCD using optimized memory bounds, disabling Dex, applicationSet controllers, and notification systems to save ~300MB of RAM.
+## Step 5: Installing ArgoCD via Helm
+* **What I did**: Installed ArgoCD using optimized memory bounds, disabling Dex, applicationSet controllers, and notification systems to save ~300MB of RAM.
 * **Commands run**:
   ```bash
   helm repo add argo https://argoproj.github.io/argo-helm
@@ -99,15 +99,15 @@ This document records the exact step-by-step execution timeline, commands, wait 
 
 ---
 
-## 📈 Step 6: Deploying the Application & Reconciling State
-* **What we did**: Applied our ArgoCD application watcher.
+## Step 6: Deploying the Application & Reconciling State
+* **What I did**: Applied our ArgoCD application watcher.
 * **Commands run**:
   ```bash
   kubectl apply -f manifests/argocd-app.yaml
   ```
 * **Troubleshooting Log**:
   * **Issue**: The application sync status remained `Unknown` with error `unable to resolve 'HEAD' to a commit SHA`.
-  * **Cause**: Git initialized the bare repository inside the pod with default branch `master`, leaving the symbolic link `HEAD` pointing to `refs/heads/master`. Because we pushed `main`, `master` did not exist.
+  * **Cause**: Git initialized the bare repository inside the pod with default branch `master`, leaving the symbolic link `HEAD` pointing to `refs/heads/master`. Because I pushed `main`, `master` did not exist.
   * **Resolution**: Updated `argocd-app.yaml` `targetRevision` from `HEAD` to `main`, committed/pushed the fix, and ran `kubectl symbolic-ref` inside the server pod.
 * **Result**: Re-synchronized successfully. ArgoCD terminated the old 8-day-old pods and rolled out our Helm-managed deployments.
   * **Sync Status**: `Synced`
@@ -115,19 +115,19 @@ This document records the exact step-by-step execution timeline, commands, wait 
 
 ---
 
-## 🔬 Step 7: Database Connectivity Validation Job
-* **What we did**: Deployed a validation job that logs in to PostgreSQL, creates a table, inserts a value, reads it back, and reports success.
+## Step 7: Database Connectivity Validation Job
+* **What I did**: Deployed a validation job that logs in to PostgreSQL, creates a table, inserts a value, reads it back, and reports success.
 * **Troubleshooting Log**:
   * **Issue**: The job creation request was blocked by the admission controller with error `failed quota: vitals-quota: must specify limits.cpu...`
-  * **Cause**: Our newly applied ResourceQuota mandates that ALL containers in the namespace must declare CPU/Memory limits and requests.
+  * **Cause**: My newly applied ResourceQuota mandates that ALL containers in the namespace must declare CPU/Memory limits and requests.
   * **Resolution**: Updated `database-job.yaml` to specify requests and limits in the containers block. Deallocated/re-applied the job.
 * **Result**: Passed successfully. Pod logs reported:
   `PostgreSQL Connection Successful! Read/Write test passed.`
 
 ---
 
-## 🛡️ Step 8: Drift Simulation & Self-Healing Validation
-* **What we did**: Scaled our deployment manually via `kubectl` to test self-healing.
+## Step 8: Drift Simulation & Self-Healing Validation
+* **What I did**: Scaled my deployment manually via `kubectl` to test self-healing.
 * **Commands run**:
   ```bash
   kubectl scale deployment vitals-frontend -n vitals-app --replicas=4
