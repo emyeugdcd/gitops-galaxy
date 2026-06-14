@@ -4,6 +4,34 @@ Welcome to GitOps Galaxy, the 6th project of the DevOps study module provided by
 
 It also configures an in-cluster **PostgreSQL Database** via Helm with persistent storage and resource quotas, verified through an automated Kubernetes Job.
 
+Here's a summary of all previous projects so you have context for what you're reviewing:
+
+**Project 1 - Server Sorcery**: I have built a network of 4 virtual machines simulating real-life infrastructure: a load balancer, two web servers, an app server. 
+- Each VM is automatically installed with the necessary software, security hardening (UFW, Fail2Ban, SSH restrictions), and networking configuration using Ansible.
+
+Link to project 1: [https://github.com/emyeugdcd/server-sorcery-101](https://github.com/emyeugdcd/server-sorcery-101)
+
+**Project 2 - Infrastructure Insight**: with the 4 VMs of the first project running, I then built a surgical-theatre-themed system metrics dashboard (well since I am a surgical nurse haha). The backend is a Go application running on the appserver: it reads raw performance data directly from the appserver's Linux kernel's virtual filesystem and exposes that data as a JSON API. The frontend is a Node.js application running on both webservers: it fetches from the backend API and renders the metrics as a live Medical Dashboard in the browser. When you visit http://192.168.56.11/, the loadbalancer routes your request to either webserver1 or webserver2. Backend and Frontend applications are deployed by Docker.
+
+Link to project 2: [https://github.com/emyeugdcd/infrastructure-insight](https://github.com/emyeugdcd/infrastructure-insight)
+
+**Project 3 - Automation Alchemy**: Automates everything from the first two projects into a single command: ./super_deploy.sh. Additionally, a GitHub Actions CI/CD pipeline is configured so that whenever we make changes to the backend and frontend application codes and push them, the corresponding running Docker containers will be destroyed and built again. That is what CI/CD means: continuous integration and continuous delivery
+
+Link to project 3: [https://github.com/emyeugdcd/automation-alchemy](https://github.com/emyeugdcd/automation-alchemy)
+
+**Project 4 - Sherlock Logs**: This project builds upon the `automation-alchemy` infrastructure, integrating a robust observability stack. It adds a centralized **Monitoring VM** that hosts Prometheus, Grafana, and the ELK Stack (Elasticsearch, Logstash, Kibana) to provide real-time metrics and aggregated logging across all nodes.
+
+Link to project 4: [https://github.com/emyeugdcd/sherlock-logs](https://github.com/emyeugdcd/sherlock-logs)
+
+
+**Project 5 - Cluster Chronicles**: This project continues from the previous four projects and demonstrates the complete migration of a microservices application (Go Backend + NodeJS Frontend) from traditional VM-based environments (`sherlock-logs`) to a local, Kubernetes-orchestrated cluster using **Minikube**. 
+
+Link to project 5: [https://github.com/emyeugdcd/cluster-chronicles](https://github.com/emyeugdcd/cluster-chronicles)
+
+**Project 6 - GitOps Galaxy**: This project continues from the previous five projects and demonstrates the transition of a microservices application (Go Backend + NodeJS Frontend) from static Kubernetes manifests (`cluster-chronicles`) to a dynamic, automated **GitOps Workflow** using **Helm** for packaging and **ArgoCD** for continuous reconciliation/delivery. It also configures an in-cluster **PostgreSQL Database** via Helm with persistent storage and resource quotas, verified through an automated Kubernetes Job.
+
+Link to project 6: [https://github.com/emyeugdcd/gitops-galaxy](https://github.com/emyeugdcd/gitops-galaxy)
+
 ---
 
 ## 1. Infrastructure Overview
