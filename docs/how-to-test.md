@@ -75,13 +75,15 @@ To help you with testing and reviewing this project, I have prepared answers to 
 ### 9. Database Persistence Configuration & Verification
 * **Answer**: Persistence is enabled on the Bitnami chart using a PersistentVolumeClaim (configured via `--set primary.persistence.size=1Gi`).
 * **Verification Procedure (Data Persistence Test)**:
-  1. Log into the database and write test data:
+  1. Log into the database and write test data (retrieving the password dynamically to avoid prompt):
      ```bash
-     kubectl exec -it vitals-db-postgresql-0 -n vitals-app -- psql -U vitals_user -d vitals -c "CREATE TABLE test_table (id SERIAL PRIMARY KEY, val VARCHAR(50)); INSERT INTO test_table (val) VALUES ('persistence_test');"
+     DB_PASSWORD=$(kubectl get secret -n vitals-app vitals-db-postgresql -o jsonpath="{.data.password}" | base64 -d)
+     kubectl exec -it vitals-db-postgresql-0 -n vitals-app -- env PGPASSWORD=$DB_PASSWORD psql -U vitals_user -d vitals -c "CREATE TABLE test_table (id SERIAL PRIMARY KEY, val VARCHAR(50)); INSERT INTO test_table (val) VALUES ('persistence_test');"
      ```
   2. Confirm data is stored:
      ```bash
-     kubectl exec -it vitals-db-postgresql-0 -n vitals-app -- psql -U vitals_user -d vitals -c "SELECT * FROM test_table;"
+     DB_PASSWORD=$(kubectl get secret -n vitals-app vitals-db-postgresql -o jsonpath="{.data.password}" | base64 -d)
+     kubectl exec -it vitals-db-postgresql-0 -n vitals-app -- env PGPASSWORD=$DB_PASSWORD psql -U vitals_user -d vitals -c "SELECT * FROM test_table;"
      ```
   3. Simulate a crash by deleting the database pod:
      ```bash
@@ -89,11 +91,12 @@ To help you with testing and reviewing this project, I have prepared answers to 
      ```
   4. Wait for the pod to restart and run:
      ```bash
-     kubectl get pods -n vitals-app -w
+     kubectl rollout status statefulset/vitals-db-postgresql -n vitals-app
      ```
   5. Once the pod is running again, verify that the data persists:
      ```bash
-     kubectl exec -it vitals-db-postgresql-0 -n vitals-app -- psql -U vitals_user -d vitals -c "SELECT * FROM test_table;"
+     DB_PASSWORD=$(kubectl get secret -n vitals-app vitals-db-postgresql -o jsonpath="{.data.password}" | base64 -d)
+     kubectl exec -it vitals-db-postgresql-0 -n vitals-app -- env PGPASSWORD=$DB_PASSWORD psql -U vitals_user -d vitals -c "SELECT * FROM test_table;"
      # Expected: "persistence_test" row is returned successfully.
      ```
 

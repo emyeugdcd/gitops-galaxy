@@ -106,6 +106,14 @@ helm upgrade --install argocd argo/argo-cd --namespace argocd --create-namespace
   --set redis.resources.limits.memory=64Mi \
   --set global.imageSignatures.enabled=false
 
+# 6.5. Deploy ArgoCD Image Updater via Helm
+echo "Step 6.5: Installing ArgoCD Image Updater via Helm..."
+helm upgrade --install argocd-image-updater argo/argocd-image-updater --namespace argocd --create-namespace \
+  --set resources.requests.memory=64Mi \
+  --set resources.limits.memory=128Mi \
+  --set resources.requests.cpu=50m \
+  --set resources.limits.cpu=100m
+
 # 7. Apply the ArgoCD Application resource
 echo "Step 7: Applying the ArgoCD Application controller manifest..."
 kubectl apply -f manifests/argocd-app.yaml
