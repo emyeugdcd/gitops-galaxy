@@ -10,38 +10,46 @@ The diagram below details the end-to-end pull-based continuous delivery flow imp
 
 ```mermaid
 graph TD
-    subgraph Local Machine
-        dev[Developer] -- "Modifies values.yaml / Code" --> git_push[git push]
+
+    subgraph Local_Machine["Local Machine"]
+        dev["Developer"]
+        git_push["git push"]
+        dev -->|Modifies values.yaml / Code| git_push
     end
 
-    subgraph Cluster Git Server
-        git_repo["In-Cluster Git Daemon<br>(gitops-galaxy.git)"]
+    subgraph Cluster_Git_Server["Cluster Git Server"]
+        git_repo["In-Cluster Git Daemon<br/>gitops-galaxy.git"]
     end
 
-    subgraph ArgoCD Control Plane (argocd namespace)
+    subgraph ArgoCD_Control_Plane["ArgoCD Control Plane (argocd namespace)"]
         argo_controller["ArgoCD Application Controller"]
         argo_repo_server["ArgoCD Repo Server"]
         argo_ui["ArgoCD UI / Dashboard"]
     end
 
-    subgraph Target Workloads (vitals-app namespace)
-        pg_db[(PostgreSQL DB<br>Helm: vitals-db)]
-        backend_pod[Backend API Pods]
-        frontend_pod[Frontend Web Pods]
+    subgraph Target_Workloads["Target Workloads (vitals-app namespace)"]
+        pg_db["PostgreSQL DB<br/>Helm: vitals-db"]
+        backend_pod["Backend API Pods"]
+        frontend_pod["Frontend Web Pods"]
     end
 
-    git_push -- "TCP Port 9418" --> git_repo
-    argo_repo_server -- "Polls every 3m / webhook" --> git_repo
-    argo_controller -- "Compares Git against live state" --> argo_repo_server
-    argo_controller -- "1. Auto-Reconciles / App-Sync" --> target_namespaces["Kubernetes API Server"]
-    target_namespaces -- "Applies manifest templates" --> backend_pod
-    target_namespaces -- "Applies manifest templates" --> frontend_pod
-    target_namespaces -- "Manages PostgreSQL" --> pg_db
+    target_namespaces["Kubernetes API Server"]
 
-    classDef k8s fill:#326ce5,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef gitops fill:#f47023,stroke:#fff,stroke-width:2px,color:#fff;
-    class pg_db,backend_pod,frontend_pod k8s;
-    class argo_controller,argo_repo_server,argo_ui gitops;
+    git_push -->|TCP Port 9418| git_repo
+    argo_repo_server -->|Polls every 3m / webhook| git_repo
+    argo_controller -->|Compares Git against live state| argo_repo_server
+
+    argo_controller -->|1. Auto-Reconciles / App-Sync| target_namespaces
+
+    target_namespaces -->|Applies manifest templates| backend_pod
+    target_namespaces -->|Applies manifest templates| frontend_pod
+    target_namespaces -->|Manages PostgreSQL| pg_db
+
+    classDef k8s fill:#326ce5,stroke:#fff,stroke-width:2px,color:#fff
+    classDef gitops fill:#f47023,stroke:#fff,stroke-width:2px,color:#fff
+
+    class pg_db,backend_pod,frontend_pod k8s
+    class argo_controller,argo_repo_server,argo_ui gitops
 ```
 
 ---
@@ -87,6 +95,10 @@ Helm uses the Go template language. During a deployment, Helm compiles the templ
     {{- end }}
     ```
 
+#### ELI5 version:
+Basically, Helm's only job is to turn templates + values into Kubernetes manifests.
+
+
 ### 4. Dependency Management
 If your application depends on a database (like PostgreSQL), you can declare it under the `dependencies` block in `Chart.yaml` instead of deploying it manually.
 *   **Chart.yaml declaration**:
@@ -103,6 +115,7 @@ Helm hooks allow developers to run actions at specific moments during a chart's 
 *   `pre-install`: Runs database schema migrations before deploying the app.
 *   `post-install`: Triggers notifications or setups configuration tasks.
 *   `test`: Executes verification jobs after the installation (triggered via `helm test`).
+
 
 ---
 
@@ -125,6 +138,7 @@ Comparing traditional CI/CD direct push deployments (e.g., Jenkins) vs. GitOps p
 | **Configuration Drift** | If a resource is altered manually, the change remains until the next build. | ArgoCD immediately flags drift and reverts it back to Git state. |
 | **Rollbacks** | Requires executing a pipeline rebuild or executing manual commands. | A standard `git revert` instantly triggers a rollback in the cluster. |
 
+
 ### 3. Sync Policies & Safety Options
 ArgoCD uses the **Application Custom Resource Definition (CRD)** to monitor states. Key configurations include:
 *   **Automated Sync**: ArgoCD automatically deploys changes when commits are pushed.
@@ -132,14 +146,124 @@ ArgoCD uses the **Application Custom Resource Definition (CRD)** to monitor stat
 *   **Self-Heal**: Automatically overwrites manual cluster overrides in real-time.
 *   **ApplyOutOfSyncOnly**: Patches only the shifted resources, optimizing API traffic.
 
+#### Examples to understand what "Git as the single source of truth" means and how ArgoCD works:
+
+**What is drift and self-heal?**
+Imagine that Git contains `replicaCount: 5` but somebody on our team logs into Kubernetes and manually changes it:
+```bash
+kubectl scale deployment backend --replicas=1
+```
+That means, right now, Git has no idea about this change. Git still thinks that there are 5 replicas, while we only have 1. This state is called **drift**. ArgoCD detects this drift and automatically reverts it back to Git state by changing the replica count back to 5. It is called **Reconciliation**, and this is what self-heal is (Argo basically heals itself, instead of just alerting us `Out of Sync` so that we manually fix it)
+
+**What is prune?**
+Imagine if we delete a service account from Git, but that service account still exists in the cluster. If prune is enabled, ArgoCD will delete that service account from the cluster. If prune is disabled, ArgoCD will not delete that service account from the cluster, and it will remain in the cluster even if it is not in the Git repository. So prune is basically **cleaning up** the cluster based on what is in Git.
+
+Basically, with prune: 
+```
+Deleted from Git
+↓
+Deleted from Kubernetes
+```
+Git and cluster remain identical.
+
+#### Architectual Flow
+
+We
+ ↓
+Edit values.yaml
+ ↓
+git push cluster main
+ ↓
+Git Server Pod
+ ↓
+ArgoCD notices commit
+ ↓
+ArgoCD clones repo
+ ↓
+ArgoCD runs Helm
+ ↓
+Helm renders manifests
+ ↓
+ArgoCD compares cluster
+ ↓
+ArgoCD applies changes
+ ↓
+Pods update
+
+
 ### 4. ArgoCD Image Updater
 ArgoCD Image Updater is an extension that automates image updates. 
 *   It monitors a container registry for new tags.
 *   When a new tag matching semantic version guidelines (e.g., `semver` patch updates) is pushed, it writes the new image tag directly back to Git (using the Git Write-Back method).
 *   ArgoCD detects this new Git commit and syncs the updated image tag into the cluster automatically.
 
+#### ELI5 version:
+
+ArgoCD doesn't magically create Kubernetes objects.
+Instead it will:
+1. Clone Git repository
+2. Run Helm
+3. Generate manifests
+4. Compare with cluster
+5. Apply differences
+
+So internally, this happens if we update our codes:
+
+Git Repo
+   ↓
+ArgoCD
+   ↓
+helm template
+   ↓
+Generated YAML
+   ↓
+kubectl apply
+   ↓
+Cluster
+
+#### Why does ArgoCD need Helm?
+
+In short: Helm turns our messy YAML into clean, installable packages.
+
+Think of it like this:
+**Before Helm (Pure YAML):**
+We have raw Lego bricks (Kubernetes objects).
+We have to connect every brick by hand.
+If we want to change the codes, we edit every every single file manually.
+If we want to share it, we send 100+ lines of YAML, and let's not forget, we need to individually apply them!
+
+**With Helm (Packaged YAML):**
+We have a Lego instruction booklet (Helm Chart).
+It tells us where every brick goes.
+We can swap the engine (Deployment) or colors (Values) easily.
+When we install, Helm builds the entire structure for us automatically.
+
+**Why ArgoCD Likes It:**
+ArgoCD doesn’t understand "Kubernetes", it only understands YAML!
+Helm generates the final YAML ArgoCD needs.
+Without Helm, ArgoCD would have to read the booklet and build it manually, which is slow and complicated and also, not its main job!
+
+So in short:
+Helm decides WHAT Kubernetes manifests should look like. ArgoCD makes sure the cluster ALWAYS matches those manifests stored in Git. In GitOps, ArgoCD runs Helm for us!
+```
+Helm = Blueprint Generator
+
+Git = Blueprint Storage
+
+ArgoCD = Blueprint Enforcer
+
+Kubernetes = The Actual Building
+```
+
+So instead of manually doing these commands everytime we change something:
+```bash
+helm install
+helm upgrade
+```
+We just push to Git, and ArgoCD performs the Helm rendering automatically.
+
 ### 5. Where Does the Code Go Right Now?
-Right now, when I run git push origin main, my code stays completely local. It goes through port-forwarding and is stored directly on the virtual disk of the git-server Pod running inside my local Minikube cluster node. It does not go to the internet or any Git website. If I delete my Minikube cluster, that specific remote repository is gone (though my local files on my Mac's hard drive remain perfectly safe).
+Right now, when I run git push cluster main, my code stays completely local. It goes through port-forwarding and is stored directly on the virtual disk of the git-server Pod running inside my local Minikube cluster node. It does not go to the internet or any Git website. If I delete my Minikube cluster, that specific remote repository is gone (though my local files on my Mac's hard drive remain perfectly safe).
 
 #### How Git Remotes Work (The Secret to Multiple Hosts)
 In Git, a Remote is simply a nickname (alias) for a URL where Git can push and pull code. By convention, the default remote is named origin, but you can have as many remotes with whatever names you want! Shall we have a quick reminder on how to manage git remotes? 
@@ -147,7 +271,7 @@ In Git, a Remote is simply a nickname (alias) for a URL where Git can push and p
 Let's demonstrate how I can push my code to multiple Git repositories at once, e.g. cluster, gitea and github, both local and remote. 
 Right now, my nicknames look like this:
 ```
-origin ➔ git://127.0.0.1:9418/gitops-galaxy.git (Local Cluster Pod)
+cluster ➔ git://127.0.0.1:9418/gitops-galaxy.git (Local Cluster Pod)
 ```
 
 If I want to push my code to Gitea and GitHub as well, I can add new nicknames
@@ -160,18 +284,11 @@ bash
 git remote -v
 ```
 
-The output will show `origin` pointing to the local IP address on port 9418.
-
-Step 2: Rename origin so it is not confusing
-Instead of calling the cluster git server origin, let's rename it to cluster:
-```
-bash
-git remote rename origin cluster
-```
+The output will show `cluster` pointing to the local IP address on port 9418.
 
 Now, `git push cluster main` will push to the local cluster git server.
 
-Step 3: Add the Gitea and GitHub remotes
+Step 2: Add the Gitea and GitHub remotes
 First, create empty repositories on the Gitea and GitHub accounts online. Then, run these commands to assign them nicknames:
 ```
 bash
@@ -181,7 +298,7 @@ git remote add origin https://your-gitea-domain.com/username/gitops-galaxy.git
 git remote add github https://github.com/your-username/gitops-galaxy.git
 ```
 
-Step 4: Verify my new configuration
+Step 3: Verify my new configuration
 Run git remote -v again. It will now show:
 ```
 text
@@ -193,7 +310,7 @@ github  https://github.com/your-username/gitops-galaxy.git (fetch)
 github  https://github.com/your-username/gitops-galaxy.git (push)
 ```
 
-Step 5: Push my code to the web!
+Step 4: Push my code to the web!
 Now I can push to any of them whenever I want:
 
 bash

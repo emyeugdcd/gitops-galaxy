@@ -13,6 +13,7 @@ minikube addons enable metrics-server
 
 # 2. Set Namespace Resource Quotas
 echo "Step 2: Applying namespace limit ranges..."
+kubectl create namespace vitals-app --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f manifests/namespace-limits.yaml
 
 # 3. Deploy PostgreSQL via Helm
@@ -39,6 +40,14 @@ echo "Waiting for Git server deployment to complete..."
 kubectl rollout status deployment/git-server -n vitals-app --timeout=120s
 
 echo "Initializing HEAD symbolic reference in git server..."
+# Wait for git to be installed and available in the container
+for i in {1..30}; do
+  if kubectl exec -n vitals-app deployment/git-server -c git-server -- which git >/dev/null 2>&1; then
+    break
+  fi
+  echo "Waiting for Git binary to be installed in git-server pod... (attempt $i/30)"
+  sleep 2
+done
 kubectl exec -n vitals-app deployment/git-server -c git-server -- git --git-dir=/git/gitops-galaxy.git symbolic-ref HEAD refs/heads/main
 
 # 5. Push local configs to the Git Server
