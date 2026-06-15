@@ -70,7 +70,65 @@ To run this project fully offline locally without external repository credential
 
 ---
 
-## 2. Cluster Setup & Installation
+## 2. Prerequisites & Cross-Platform Installation
+
+Before starting, ensure the following core tools are installed on your host machine based on your Operating System:
+
+### A. macOS Setup (Intel / Apple Silicon)
+1. Install **Docker Desktop**: [Download Link](https://www.docker.com/products/docker-desktop/) (Enable "Use Virtualization framework" under settings).
+2. Install tools via Homebrew:
+   ```bash
+   brew install minikube kubectl helm k9s
+   ```
+
+### B. Windows Setup (WSL 2)
+1. Install **Docker Desktop for Windows** and enable the **WSL 2 backend** in settings.
+2. Open your WSL 2 terminal (e.g. Ubuntu) and install dependencies:
+   ```bash
+   # Install kubectl
+   curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+   sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+   
+   # Install Minikube
+   curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+   sudo install minikube-linux-amd64 /usr/local/bin/minikube
+   
+   # Install Helm
+   curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+   # Install ArgoCD
+   kubectl create namespace argocd
+   kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+   ```
+
+### C. Linux Setup (Ubuntu/Debian)
+1. Install Docker Engine: `sudo apt install docker.io -y` (Add user: `sudo usermod -aG docker $USER && newgrp docker`).
+2. Install Minikube and Kubectl using the Debian package managers or standard curl releases.
+3. Install Helm:
+```bash
+# Download the latest Helm binary
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+
+# Make it executable
+chmod +x get_helm.sh
+
+# Run it
+./get_helm.sh
+```
+
+4. Install ArgoCD
+```bash
+# Create the argocd namespace
+kubectl create namespace argocd
+
+# Install ArgoCD components into the argocd namespace
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# Verify installation
+kubectl get pods -n argocd
+```
+
+## 3. Cluster Setup & Installation
 
 There are two ways to run the setup of this project. You can either run the command to get everything up and running
 ```bash
@@ -165,7 +223,7 @@ kubectl apply -f manifests/argocd-app.yaml
 
 ---
 
-## 3. Validation & Testing Runbook
+## 4. Validation & Testing Runbook
 
 ### Test 1: Verify PostgreSQL Connectivity (Batch Job)
 Apply the batch Job which writes and reads from PostgreSQL:
@@ -205,7 +263,7 @@ kubectl get deployment vitals-frontend -n vitals-app
 
 ---
 
-## 4. Study Guide & Core Concepts
+## 5. Study Guide & Core Concepts
 
 To prepare for the review, in the /docs directory, I have prepared a study-guide.md file that serves as a comprehensive guide for understanding the core concepts of Helm and GitOps. This study-guide.md can be used together with the how-to-test.md to learn more about the concepts and technology used in this project. 
 
@@ -215,6 +273,6 @@ Key areas covered in the study-guide.md:
 - **Architectural Comparison**: Detailed comparison mapping differences between the imperative setup of [Cluster Chronicles] and the declarative GitOps engine of [GitOps Galaxy].
 ---
 
-## 5. Complete Testing Rubric
+## 6. Complete Testing Rubric
 
 To make the review process easier, I have fully documented answers, commands, and verification guidelines for all 40 requirements in [how-to-test.md]. 
