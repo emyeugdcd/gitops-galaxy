@@ -216,12 +216,18 @@ To help you with testing and reviewing this project, I have prepared answers to 
     ```
 
 ### 23. Least Privilege RBAC Configuration
-* **Reference**: ArgoCD RBAC is configured via the `argocd-rbac-cm` ConfigMap in the `argocd` namespace.
-* **Verification**: Review ConfigMap configurations:
+* **Answer**: In our repository, we maintain a custom ConfigMap manifest [argocd-rbac.yaml](file:///Users/williamle/my_cloud_project/kood-sisu/gitops-galaxy/manifests/argocd-rbac.yaml) which overwrites ArgoCD's default RBAC policies to enforce strict least-privilege control.
+  - Sets the default fallback policy to `role:readonly` (read-only for all unassigned users).
+  - Establishes a custom `role:developer` that is explicitly denied `create` and `delete` capabilities on Application resources.
+  - Binds user `william` to `role:developer`.
+* **Verification**: Verify the policy defined in the repository:
+  ```bash
+  cat manifests/argocd-rbac.yaml
+  ```
+  Verify the applied policy in the running cluster:
   ```bash
   kubectl get configmap argocd-rbac-cm -n argocd -o yaml
   ```
-  Ensure policy settings are configured to restrict write permissions for read-only user groups.
 
 ### 24. Safe Sync Options & Resource Pruning
 * **Answer**:
@@ -252,37 +258,61 @@ To help you with testing and reviewing this project, I have prepared answers to 
   ```
 
 ### 27. Git Write-Back Configuration
-* **Answer**: The image updater is configured using application annotations in `argocd-app.yaml`:
+* **Answer**: The Git Write-Back method is configured using dedicated annotations in the repository's Application manifest [argocd-app.yaml](file:///Users/williamle/my_cloud_project/kood-sisu/gitops-galaxy/manifests/argocd-app.yaml):
   ```yaml
-  argocd-image-updater.argoproj.io/write-back-method: git
+  metadata:
+    annotations:
+      argocd-image-updater.argoproj.io/write-back-method: git
+      argocd-image-updater.argoproj.io/git-branch: main
   ```
-  *Mechanism*: When a new container image is pushed to the registry, the Image Updater commits a file named `.argocd-source-vitals-app.yaml` back to the Git repository containing the updated tags. ArgoCD pulls this change and updates the pods automatically.
+  *Verification*:
+  To prove write-back is active, check the annotations in the repository:
+  ```bash
+  cat manifests/argocd-app.yaml | grep write-back-method
+  ```
+  Or check the applied application in the cluster:
+  ```bash
+  kubectl get app vitals-app -n argocd -o yaml | grep write-back-method
+  ```
 
 ### 28. Version Constraint Filtering (Ignoring Minor & Major Updates)
-* **Answer**: We enforce patch-only updates by adding SemVer constraints:
+* **Answer**: SemVer constraints and tag restrictions are declared via annotations on the Application resource in [argocd-app.yaml](file:///Users/williamle/my_cloud_project/kood-sisu/gitops-galaxy/manifests/argocd-app.yaml):
   ```yaml
-  argocd-image-updater.argoproj.io/vitals-backend.update-strategy: semver
-  argocd-image-updater.argoproj.io/vitals-backend.allow-tags: ~1.16.x
+  metadata:
+    annotations:
+      argocd-image-updater.argoproj.io/image-list: backend=vitals-backend
+      argocd-image-updater.argoproj.io/backend.update-strategy: semver
+      argocd-image-updater.argoproj.io/backend.allow-tags: ~1.16.x
   ```
-  *Verification*: Image tags like `1.16.1` are processed, while major updates (e.g., `2.0.0`) or minor updates (e.g., `1.17.0`) are ignored.
+  This configuration instructs the updater to scan for newer tags within the `1.16.x` range (patch updates), while automatically ignoring minor updates (e.g., `1.17.0`) and major updates (e.g., `2.0.0`).
+* **Verification**:
+  Verify these annotations are present in the repo configuration:
+  ```bash
+  cat manifests/argocd-app.yaml | grep allow-tags
+  ```
 
 ### 29. GitOps CI/CD Pipeline Workflow
 * **Answer**:
-  1. Developer commits code changes to the repository.
-  2. The CI pipeline builds the Docker container and pushes it to the registry.
-  3. The CI pipeline updates the image tags in the Git repository values files.
-  4. ArgoCD detects the change in Git and deploys the new version to the cluster.
+  1. The developer pushes application changes.
+  2. The CI pipeline compiles, builds, and pushes the new container image.
+  3. The CI pipeline updates the target tag in the repository's configuration files (Git write-back or values patch).
+  4. ArgoCD pulls the commit and updates the Kubernetes workloads automatically.
 
 ### 30. Pipeline Application CRD Management
-* **Answer**: The CI pipeline applies the Application CRD (`manifests/argocd-app.yaml`) during bootstrap steps to register the tracking loop with the cluster API.
+* **Answer**: The CI pipeline applies the Application CRD (`manifests/argocd-app.yaml`) during deployment to register the tracking loop.
 
 ### 31. Pipeline Fallback & Rollback Execution
-* **Verification**: If a deployment fails, we revert the last tag update commit in Git:
+* **Answer**: We have created an automated pipeline script [pipeline.sh](file:///Users/williamle/my_cloud_project/kood-sisu/gitops-galaxy/pipeline.sh) that simulates the CI/CD pipeline, tracks application health, and executes automated rollbacks when failures are detected.
+* **Verification Procedure (Failure and Rollback Test)**:
+  Run the automated rollback simulation script:
   ```bash
-  git revert HEAD
-  git push origin main
+  ./pipeline.sh test-rollback
   ```
-  ArgoCD detects the revert and redeploys the previous stable version.
+  *How it works*:
+  1. The script updates the backend tag in `values.yaml` to an invalid value (`broken-tag-9999`) to simulate a bad deployment.
+  2. It commits and pushes this change to the cluster Git repository.
+  3. It continuously monitors the ArgoCD application health.
+  4. Once it detects a container image pull failure or a degraded state in the cluster, the script **automatically reverts the bad commit in Git** (`git revert HEAD && git push cluster main`), reverting the cluster back to the previous stable state.
 
 ---
 

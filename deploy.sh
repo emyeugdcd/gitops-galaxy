@@ -114,8 +114,9 @@ helm upgrade --install argocd-image-updater argo/argocd-image-updater --namespac
   --set resources.requests.cpu=50m \
   --set resources.limits.cpu=100m
 
-# 7. Apply the ArgoCD Application resource
-echo "Step 7: Applying the ArgoCD Application controller manifest..."
+# 7. Apply the ArgoCD Application resource and RBAC policies
+echo "Step 7: Applying custom RBAC policies and the ArgoCD Application manifest..."
+kubectl apply -f manifests/argocd-rbac.yaml
 kubectl apply -f manifests/argocd-app.yaml
 
 # Output instructions

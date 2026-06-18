@@ -3,6 +3,15 @@ kind: Application
 metadata:
   name: vitals-app
   namespace: argocd
+  annotations:
+    # Enable Git Write-Back method
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
+    
+    # Configure image watch list and tracking strategy (SemVer constraints)
+    argocd-image-updater.argoproj.io/image-list: backend=vitals-backend
+    argocd-image-updater.argoproj.io/backend.update-strategy: semver
+    argocd-image-updater.argoproj.io/backend.allow-tags: ~1.16.x
 spec:
   project: default
   source:
