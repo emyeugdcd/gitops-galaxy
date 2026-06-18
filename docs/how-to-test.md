@@ -216,7 +216,7 @@ To help you with testing and reviewing this project, I have prepared answers to 
     ```
 
 ### 23. Least Privilege RBAC Configuration
-* **Answer**: In our repository, we maintain a custom ConfigMap manifest [argocd-rbac.yaml](file:///Users/williamle/my_cloud_project/kood-sisu/gitops-galaxy/manifests/argocd-rbac.yaml) which overwrites ArgoCD's default RBAC policies to enforce strict least-privilege control.
+* **Answer**: In our repository, we maintain a custom ConfigMap manifest [argocd-rbac.yaml] which overwrites ArgoCD's default RBAC policies to enforce strict least-privilege control.
   - Sets the default fallback policy to `role:readonly` (read-only for all unassigned users).
   - Establishes a custom `role:developer` that is explicitly denied `create` and `delete` capabilities on Application resources.
   - Binds user `william` to `role:developer`.
@@ -276,7 +276,7 @@ To help you with testing and reviewing this project, I have prepared answers to 
   ```
 
 ### 28. Version Constraint Filtering (Ignoring Minor & Major Updates)
-* **Answer**: SemVer constraints and tag restrictions are declared via annotations on the Application resource in [argocd-app.yaml](file:///Users/williamle/my_cloud_project/kood-sisu/gitops-galaxy/manifests/argocd-app.yaml):
+* **Answer**: SemVer constraints and tag restrictions are declared via annotations on the Application resource in [argocd-app.yaml]:
   ```yaml
   metadata:
     annotations:
@@ -302,7 +302,7 @@ To help you with testing and reviewing this project, I have prepared answers to 
 * **Answer**: The CI pipeline applies the Application CRD (`manifests/argocd-app.yaml`) during deployment to register the tracking loop.
 
 ### 31. Pipeline Fallback & Rollback Execution
-* **Answer**: We have created an automated pipeline script [pipeline.sh](file:///Users/williamle/my_cloud_project/kood-sisu/gitops-galaxy/pipeline.sh) that simulates the CI/CD pipeline, tracks application health, and executes automated rollbacks when failures are detected.
+* **Answer**: We have created an automated pipeline script [pipeline.sh] that simulates the CI/CD pipeline, tracks application health, and executes automated rollbacks when failures are detected.
 * **Verification Procedure (Failure and Rollback Test)**:
   Run the automated rollback simulation script:
   ```bash
